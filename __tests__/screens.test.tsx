@@ -325,4 +325,33 @@ describe("Appointment", () => {
     await screen.findByText("Sam Client");
     expect(screen.queryByText(/by card/)).toBeNull();
   });
+
+  test("offers to move the appointment when the server allows it, and opens the reschedule screen", async () => {
+    mocked.booking.mockResolvedValue(booking());
+    await renderWithClient(<BookingScreen />);
+    await fireEvent.press(await screen.findByText("Move to another time"));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/booking/reschedule/[id]",
+      params: { id: "B1" },
+    });
+  });
+
+  test("no move button when it cannot be moved", async () => {
+    mocked.booking.mockResolvedValue(
+      booking({
+        allowed: {
+          move: false,
+          cancel: true,
+          noShow: true,
+          checkout: true,
+          resend: true,
+          reassign: true,
+          refund: true,
+        },
+      }),
+    );
+    await renderWithClient(<BookingScreen />);
+    await screen.findByText("Sam Client");
+    expect(screen.queryByText("Move to another time")).toBeNull();
+  });
 });

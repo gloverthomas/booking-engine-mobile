@@ -346,3 +346,18 @@ export const clockSchema = z.discriminatedUnion("available", [
 ]);
 export type ClockState = z.infer<typeof clockSchema>;
 export const clockEntrySchema = z.object({ entryId: z.string() });
+
+export const rescheduleSlotsSchema = z.object({
+  current: z.object({ start: z.string(), end: z.string() }),
+  slots: z.array(
+    z.object({
+      staffId: z.string(),
+      start: z.string(),
+      end: z.string(),
+      totalCents: z.number().optional(),
+      durationMin: z.number().optional(),
+    }),
+  ),
+  reason: z.enum(["services_not_in_catalogue"]).nullable(),
+});
+export type RescheduleSlots = z.infer<typeof rescheduleSlotsSchema>;

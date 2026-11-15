@@ -20,7 +20,8 @@ cancellation policy all live on the server, so the app and the web admin can nev
 | Push notifications: new client booking and client cancellation to the stylist and owners; tap opens the appointment; sign-out stops them; Account shows the state | Built; **untested on a device** (needs an EAS project id, see below) |
 | Roster: who is working when, week by week (a stylist sees their own) | Built |
 | Clock in and out, with the location and an unpaid break; elapsed time from the server's clock | Built |
-| Reschedule, waitlist | Not yet |
+| Reschedule: pick a day and a free time for the same stylist, tell the client or not; times are the server's | Built (imported services without a catalogue match get a message, not suggestions) |
+| Waitlist | Not yet |
 
 ## Run it
 

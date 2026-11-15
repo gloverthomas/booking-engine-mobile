@@ -211,6 +211,19 @@ export default function BookingScreen() {
             onPress={askPaid}
           />
         ) : null}
+        {b.allowed.move ? (
+          <Button
+            title="Move to another time"
+            variant="secondary"
+            disabled={busy}
+            onPress={() =>
+              router.push({
+                pathname: "/booking/reschedule/[id]",
+                params: { id },
+              })
+            }
+          />
+        ) : null}
         {b.allowed.noShow ? (
           <Button
             title="No-show"

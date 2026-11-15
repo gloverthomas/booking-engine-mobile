@@ -5,6 +5,7 @@ import {
   bookingListSchema,
   clockEntrySchema,
   clockSchema,
+  rescheduleSlotsSchema,
   rosterSchema,
   cardPaymentSchema,
   cardPaymentStatusSchema,
@@ -92,6 +93,11 @@ export function createEndpoints(api: ApiClient) {
       api.post(`/bookings/${enc(id)}/reschedule`, doneSchema, {
         newStart,
         notifyClient,
+      }),
+    rescheduleSlots: (id: string, fromDate: string, toDate: string) =>
+      api.get(`/bookings/${enc(id)}/reschedule-slots`, rescheduleSlotsSchema, {
+        fromDate,
+        toDate,
       }),
     reassign: (id: string, newStaffId: string, notifyClient: boolean) =>
       api.post(`/bookings/${enc(id)}/reassign`, doneSchema, {

@@ -24,6 +24,10 @@ export default function AppLayout() {
           name="booking/new"
           options={{ title: "New appointment", presentation: "modal" }}
         />
+        <Stack.Screen
+          name="booking/reschedule/[id]"
+          options={{ title: "Move appointment", presentation: "modal" }}
+        />
         <Stack.Screen name="client/[id]" options={{ title: "Client" }} />
         <Stack.Screen
           name="booking/pay/[id]"
