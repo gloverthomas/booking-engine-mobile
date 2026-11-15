@@ -18,7 +18,9 @@ cancellation policy all live on the server, so the app and the web admin can nev
 | Clients: search and profile with history | Built |
 | Tap to Pay on iPhone: take the balance by card, server-recorded, appointment closes itself | Built; **untested on a device** (needs Apple's entitlement and a Stripe Terminal location, see below) |
 | Push notifications: new client booking and client cancellation to the stylist and owners; tap opens the appointment; sign-out stops them; Account shows the state | Built; **untested on a device** (needs an EAS project id, see below) |
-| Reschedule, roster, clock in and out | Not yet |
+| Roster: who is working when, week by week (a stylist sees their own) | Built |
+| Clock in and out, with the location and an unpaid break; elapsed time from the server's clock | Built |
+| Reschedule, waitlist | Not yet |
 
 ## Run it
 

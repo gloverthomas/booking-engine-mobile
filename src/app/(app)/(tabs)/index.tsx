@@ -3,6 +3,7 @@ import { Link, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import { AppointmentCard } from "@/components/booking/AppointmentCard";
+import { ClockCard } from "@/components/ClockCard";
 import { Button } from "@/components/ui/Button";
 import { Screen } from "@/components/ui/Screen";
 import { EmptyState, ErrorState, Loading } from "@/components/ui/States";
@@ -79,6 +80,8 @@ export default function Today() {
           <Text variant="title">›</Text>
         </Pressable>
       </View>
+
+      <ClockCard />
 
       <Button
         title="New appointment"

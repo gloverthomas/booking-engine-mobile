@@ -25,6 +25,19 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="roster"
+        options={{
+          title: "Roster",
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name="calendar.badge.clock"
+              tintColor={color}
+              size={24}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="clients"
         options={{
           title: "Clients",

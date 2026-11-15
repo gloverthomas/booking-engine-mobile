@@ -7,6 +7,8 @@ export const keys = {
   allCalendar: ["calendar"] as const,
   booking: (id: string) => ["booking", id] as const,
   resources: ["resources"] as const,
+  clock: ["clock"] as const,
+  roster: (week: string | undefined) => ["roster", week ?? "this"] as const,
   clients: (q: string) => ["clients", q] as const,
   client: (id: string) => ["client", id] as const,
   availability: (key: string) => ["availability", key] as const,

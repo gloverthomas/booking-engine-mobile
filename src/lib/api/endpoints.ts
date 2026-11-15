@@ -3,6 +3,9 @@ import type { ApiClient } from "./client";
 import {
   bookingDetailSchema,
   bookingListSchema,
+  clockEntrySchema,
+  clockSchema,
+  rosterSchema,
   cardPaymentSchema,
   cardPaymentStatusSchema,
   connectionTokenSchema,
@@ -112,6 +115,13 @@ export function createEndpoints(api: ApiClient) {
       api.post("/devices", z.object({ registered: z.boolean() }), { token }),
     removeDevice: (token: string) =>
       api.delete("/devices", z.object({ registered: z.boolean() }), { token }),
+
+    roster: (week?: string) => api.get("/roster", rosterSchema, { week }),
+    clock: () => api.get("/timesheets/clock", clockSchema),
+    clockIn: (locationId?: string) =>
+      api.post("/timesheets/clock/in", clockEntrySchema, { locationId }),
+    clockOut: (breakMinutes: number) =>
+      api.post("/timesheets/clock/out", clockEntrySchema, { breakMinutes }),
 
     searchClients: (q: string) => api.get("/clients", clientListSchema, { q }),
     client: (id: string) => api.get(`/clients/${enc(id)}`, clientProfileSchema),

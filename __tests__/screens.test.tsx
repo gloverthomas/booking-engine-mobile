@@ -13,6 +13,7 @@ jest.mock("@/lib/api", () => ({
     markNoShow: jest.fn(),
     checkout: jest.fn(),
     terminalConfig: jest.fn(),
+    clock: jest.fn(),
   },
   sessionBridge: { setToken: jest.fn(), onEnded: jest.fn() },
 }));

@@ -282,3 +282,67 @@ export const cardPaymentStatusSchema = z.object({
   balanceDueCents: z.number(),
 });
 export type CardPaymentStatus = z.infer<typeof cardPaymentStatusSchema>;
+
+const minuteRangeSchema = z.object({
+  startMinute: z.number(),
+  endMinute: z.number(),
+});
+export type MinuteRange = z.infer<typeof minuteRangeSchema>;
+
+const rosterDaySchema = z.object({
+  date: z.string(),
+  entries: z.array(
+    z.object({
+      locationId: z.string(),
+      locationName: z.string(),
+      kind: z.enum(["weekly", "custom"]),
+      ranges: z.array(minuteRangeSchema),
+    }),
+  ),
+  off: z
+    .object({
+      note: z.string().nullable(),
+      everywhere: z.boolean(),
+      locationNames: z.array(z.string()),
+    })
+    .nullable(),
+});
+export type RosterDay = z.infer<typeof rosterDaySchema>;
+
+export const rosterSchema = z.object({
+  weekStart: z.string(),
+  dates: z.array(z.string()),
+  timezone: z.string(),
+  today: z.string(),
+  scope: z.enum(["all", "own"]),
+  canEdit: z.boolean(),
+  locations: z.array(z.object({ id: z.string(), name: z.string() })),
+  rows: z.array(
+    z.object({
+      staffId: z.string(),
+      name: z.string(),
+      colour: z.string().nullable(),
+      days: z.array(rosterDaySchema),
+    }),
+  ),
+});
+export type Roster = z.infer<typeof rosterSchema>;
+
+export const clockSchema = z.discriminatedUnion("available", [
+  z.object({ available: z.literal(false) }),
+  z.object({
+    available: z.literal(true),
+    /** The server's clock, so elapsed time is right even if the phone's clock is off. */
+    serverNow: z.string(),
+    open: z
+      .object({
+        since: z.string(),
+        sinceLabel: z.string(),
+        locationName: z.string().nullable(),
+      })
+      .nullable(),
+    locations: z.array(z.object({ id: z.string(), name: z.string() })),
+  }),
+]);
+export type ClockState = z.infer<typeof clockSchema>;
+export const clockEntrySchema = z.object({ entryId: z.string() });
