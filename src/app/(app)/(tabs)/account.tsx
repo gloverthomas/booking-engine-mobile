@@ -1,5 +1,6 @@
 import Constants from "expo-constants";
 import { Alert } from "react-native";
+import { NotificationStatus } from "@/components/NotificationStatus";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Screen } from "@/components/ui/Screen";
@@ -37,6 +38,7 @@ export default function Account() {
           Times shown in {me.business.timezone.replace("_", " ")}
         </Text>
       </Card>
+      <NotificationStatus />
       <Button title="Sign out" variant="secondary" onPress={confirmSignOut} />
       <Text variant="caption" tone="subtle" style={{ textAlign: "center" }}>
         HairMate {Constants.expoConfig?.version ?? ""}

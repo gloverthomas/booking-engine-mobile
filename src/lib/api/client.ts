@@ -75,7 +75,7 @@ export function createApiClient(options: ApiClientOptions) {
   const doFetch = options.fetch ?? fetch;
 
   async function request<S extends z.ZodType>(
-    method: "GET" | "POST",
+    method: "GET" | "POST" | "DELETE",
     path: string,
     init: RequestInit<S>,
   ): Promise<z.output<S>> {
@@ -149,6 +149,8 @@ export function createApiClient(options: ApiClientOptions) {
       body?: unknown,
       anonymous = false,
     ) => request("POST", path, { schema, body: body ?? {}, anonymous }),
+    delete: <S extends z.ZodType>(path: string, schema: S, body?: unknown) =>
+      request("DELETE", path, { schema, body: body ?? {} }),
   };
 }
 

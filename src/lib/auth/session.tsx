@@ -12,6 +12,7 @@ import { api, sessionBridge } from "../api";
 import { NetworkError, messageFor } from "../api/client";
 import type { Me } from "../api/schemas";
 import { signInWithGoogle, signOutOfGoogle } from "./google";
+import { unregisterThisPhone } from "../notifications/platform";
 import { tokenStore } from "./token-store";
 
 export type SessionState =
@@ -129,6 +130,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
       },
       signInWithToken: (token) => adopt(token.trim()),
       async signOut() {
+        // Stop notifying this phone first, while the token still works.
+        await unregisterThisPhone();
         try {
           await api.signOut();
         } catch {

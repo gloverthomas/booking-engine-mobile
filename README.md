@@ -17,7 +17,7 @@ cancellation policy all live on the server, so the app and the web admin can nev
 | New appointment: find or add a client, services, stylist, day, live availability, tell the client or not | Built |
 | Clients: search and profile with history | Built |
 | Tap to Pay on iPhone: take the balance by card, server-recorded, appointment closes itself | Built; **untested on a device** (needs Apple's entitlement and a Stripe Terminal location, see below) |
-| Push notifications | Not yet |
+| Push notifications: new client booking and client cancellation to the stylist and owners; tap opens the appointment; sign-out stops them; Account shows the state | Built; **untested on a device** (needs an EAS project id, see below) |
 | Reschedule, roster, clock in and out | Not yet |
 
 ## Run it
@@ -76,8 +76,20 @@ recorded" and never invites a second charge.
   declaring an entitlement the provisioning profile lacks makes the build fail to sign.
 - The server needs `STRIPE_TERMINAL_LOCATION_ID` and in-person payments enabled on the Stripe account.
 
+## Push notifications
+
+On sign-in the app asks iOS for permission (once, in context), gets an Expo push token and registers it
+with `POST /api/v1/devices`; sign-out removes it. The server sends through Expo's push service, so we never
+handle Apple push certificates ourselves: EAS manages them when you build.
+
+- Needs an **EAS project id**: run `npx eas-cli@latest init` once (it writes `extra.eas.projectId`). Until
+  then registration is skipped quietly and the Account screen simply shows notifications as off.
+- Push does not work in the iOS Simulator; test on a real iPhone with a development build.
+- The notification text is the client's first name, the services and the time, never contact details.
+
 ## What it needs before a real build
 
+- An Expo account and `eas init` (push and builds)
 - Apple Developer Program account in Ryan's name; bundle id `world.hairmate.app` is a placeholder
 - Google Cloud OAuth client of type iOS for that bundle id, set as `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` here
   and `GOOGLE_IOS_CLIENT_ID` on the server

@@ -1,9 +1,12 @@
 import { Stack } from "expo-router";
 import { TerminalBoundary } from "@/components/payment/TerminalBoundary";
+import { useNotificationTaps, usePushRegistration } from "@/hooks/use-push";
 import { useTheme } from "@/theme";
 
 export default function AppLayout() {
   const t = useTheme();
+  usePushRegistration();
+  useNotificationTaps();
   return (
     <TerminalBoundary>
       <Stack

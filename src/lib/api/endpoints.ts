@@ -108,6 +108,11 @@ export function createEndpoints(api: ApiClient) {
         paymentId,
       }),
 
+    registerDevice: (token: string) =>
+      api.post("/devices", z.object({ registered: z.boolean() }), { token }),
+    removeDevice: (token: string) =>
+      api.delete("/devices", z.object({ registered: z.boolean() }), { token }),
+
     searchClients: (q: string) => api.get("/clients", clientListSchema, { q }),
     client: (id: string) => api.get(`/clients/${enc(id)}`, clientProfileSchema),
   };
