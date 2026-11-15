@@ -257,3 +257,28 @@ export const outcomeSchema = z.object({
 });
 export type Outcome = z.infer<typeof outcomeSchema>;
 export const doneSchema = z.unknown();
+
+export const terminalConfigSchema = z.object({
+  configured: z.boolean(),
+  locationId: z.string().nullable(),
+});
+export const connectionTokenSchema = z.object({ secret: z.string().min(1) });
+export const cardPaymentSchema = z.object({
+  paymentId: z.string(),
+  paymentIntentId: z.string(),
+  clientSecret: z.string().min(1),
+  amountCents: z.number(),
+});
+export type CardPayment = z.infer<typeof cardPaymentSchema>;
+export const cardPaymentStatusSchema = z.object({
+  status: z.enum([
+    "pending",
+    "succeeded",
+    "failed",
+    "refunded",
+    "partially_refunded",
+  ]),
+  bookingStatus: z.string(),
+  balanceDueCents: z.number(),
+});
+export type CardPaymentStatus = z.infer<typeof cardPaymentStatusSchema>;

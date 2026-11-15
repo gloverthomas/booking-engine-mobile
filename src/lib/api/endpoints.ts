@@ -3,6 +3,9 @@ import type { ApiClient } from "./client";
 import {
   bookingDetailSchema,
   bookingListSchema,
+  cardPaymentSchema,
+  cardPaymentStatusSchema,
+  connectionTokenSchema,
   calendarSchema,
   clientListSchema,
   clientProfileSchema,
@@ -13,6 +16,7 @@ import {
   resourcesSchema,
   signInSchema,
   slotsSchema,
+  terminalConfigSchema,
 } from "./schemas";
 
 export interface NewBookingInput {
@@ -93,6 +97,16 @@ export function createEndpoints(api: ApiClient) {
       }),
     checkout: (id: string, method: ManualMethod) =>
       api.post(`/bookings/${enc(id)}/checkout`, doneSchema, { method }),
+
+    terminalConfig: () => api.get("/payments/terminal", terminalConfigSchema),
+    connectionToken: () =>
+      api.post("/payments/terminal/connection-token", connectionTokenSchema),
+    startCardPayment: (id: string) =>
+      api.post(`/bookings/${enc(id)}/card-payment`, cardPaymentSchema),
+    cardPaymentStatus: (id: string, paymentId: string) =>
+      api.get(`/bookings/${enc(id)}/card-payment`, cardPaymentStatusSchema, {
+        paymentId,
+      }),
 
     searchClients: (q: string) => api.get("/clients", clientListSchema, { q }),
     client: (id: string) => api.get(`/clients/${enc(id)}`, clientProfileSchema),

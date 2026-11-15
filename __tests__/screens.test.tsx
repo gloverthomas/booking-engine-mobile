@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Alert, Linking } from "react-native";
 import { api } from "@/lib/api";
 import { ApiRequestError } from "@/lib/api/client";
@@ -12,6 +12,7 @@ jest.mock("@/lib/api", () => ({
     cancelBooking: jest.fn(),
     markNoShow: jest.fn(),
     checkout: jest.fn(),
+    terminalConfig: jest.fn(),
   },
   sessionBridge: { setToken: jest.fn(), onEnded: jest.fn() },
 }));
@@ -21,11 +22,12 @@ jest.mock("@/lib/auth/session", () => ({
 }));
 
 const mockBack = jest.fn();
+const mockPush = jest.fn();
 jest.mock("expo-router", () => {
   const { View } = jest.requireActual("react-native");
   return {
     Link: ({ children }: { children: unknown }) => children,
-    useRouter: () => ({ push: jest.fn(), back: mockBack, replace: jest.fn() }),
+    useRouter: () => ({ push: mockPush, back: mockBack, replace: jest.fn() }),
     useLocalSearchParams: () => ({ id: "B1" }),
     Stack: { Screen: View },
   };
@@ -40,6 +42,10 @@ const alertSpy = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
 beforeEach(() => {
   jest.clearAllMocks();
   mocked.resources.mockResolvedValue(RESOURCES);
+  mocked.terminalConfig.mockResolvedValue({
+    configured: false,
+    locationId: null,
+  });
 });
 
 /** The buttons of the most recent Alert, by label. */
@@ -51,6 +57,14 @@ function lastAlertButton(label: string) {
       `No "${label}" button in the alert (${buttons.map((b) => b.text).join(", ")})`,
     );
   return found;
+}
+
+/** Press a button of the latest Alert the way the OS would, inside React's act scope. */
+async function pressAlert(label: string) {
+  const button = lastAlertButton(label);
+  await act(async () => {
+    button.onPress?.();
+  });
 }
 
 describe("Today", () => {
@@ -152,9 +166,9 @@ describe("Appointment", () => {
 
   test("Call opens the dialler with the client's number", async () => {
     mocked.booking.mockResolvedValue(booking());
-    const open = jest.spyOn(Linking, "openURL").mockResolvedValue(true);
+    const open = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
     await renderWithClient(<BookingScreen />);
-    fireEvent.press(await screen.findByText("Call"));
+    await fireEvent.press(await screen.findByText("Call"));
     expect(open).toHaveBeenCalledWith("tel:+61412345678");
   });
 
@@ -193,9 +207,9 @@ describe("Appointment", () => {
       feeCents: 0,
     });
     await renderWithClient(<BookingScreen />);
-    fireEvent.press(await screen.findByText("Cancel appointment"));
+    await fireEvent.press(await screen.findByText("Cancel appointment"));
     expect(alertSpy.mock.calls.at(-1)?.[1]).toContain("$47.50");
-    lastAlertButton("Cancel and refund deposit").onPress?.();
+    await pressAlert("Cancel and refund deposit");
     await waitFor(() =>
       expect(mocked.cancelBooking).toHaveBeenCalledWith(
         "B1",
@@ -216,7 +230,7 @@ describe("Appointment", () => {
       booking({ depositCents: 0, paidCents: 0, balanceDueCents: 9500 }),
     );
     await renderWithClient(<BookingScreen />);
-    fireEvent.press(await screen.findByText("Cancel appointment"));
+    await fireEvent.press(await screen.findByText("Cancel appointment"));
     const labels = (alertSpy.mock.calls.at(-1)?.[2] ?? []).map((b) => b.text);
     expect(labels).toEqual(["Keep it", "Cancel appointment"]);
   });
@@ -228,9 +242,9 @@ describe("Appointment", () => {
       feeCents: 5000,
     });
     await renderWithClient(<BookingScreen />);
-    fireEvent.press(await screen.findByText("No-show"));
+    await fireEvent.press(await screen.findByText("No-show"));
     expect(mocked.markNoShow).not.toHaveBeenCalled();
-    lastAlertButton("Mark no-show").onPress?.();
+    await pressAlert("Mark no-show");
     await waitFor(() => expect(mocked.markNoShow).toHaveBeenCalledWith("B1"));
     await waitFor(() =>
       expect(alertSpy.mock.calls.at(-1)?.[0]).toBe("Marked as no-show"),
@@ -242,8 +256,8 @@ describe("Appointment", () => {
     mocked.booking.mockResolvedValue(booking());
     mocked.checkout.mockResolvedValue({});
     await renderWithClient(<BookingScreen />);
-    fireEvent.press(await screen.findByText("Mark $47.50 as paid"));
-    lastAlertButton("EFTPOS").onPress?.();
+    await fireEvent.press(await screen.findByText("Mark $47.50 as paid"));
+    await pressAlert("EFTPOS");
     await waitFor(() =>
       expect(mocked.checkout).toHaveBeenCalledWith("B1", "eftpos"),
     );
@@ -259,8 +273,8 @@ describe("Appointment", () => {
       ),
     );
     await renderWithClient(<BookingScreen />);
-    fireEvent.press(await screen.findByText("No-show"));
-    lastAlertButton("Mark no-show").onPress?.();
+    await fireEvent.press(await screen.findByText("No-show"));
+    await pressAlert("Mark no-show");
     await waitFor(() =>
       expect(alertSpy.mock.calls.at(-1)).toEqual([
         "That didn't work",
@@ -275,5 +289,39 @@ describe("Appointment", () => {
     );
     await renderWithClient(<BookingScreen />);
     expect(await screen.findByText("That was not found")).toBeTruthy();
+  });
+
+  test("offers a card payment only when Tap to Pay is set up, and opens the payment screen", async () => {
+    mocked.booking.mockResolvedValue(booking());
+    mocked.terminalConfig.mockResolvedValue({
+      configured: true,
+      locationId: "tml_1",
+    });
+    await renderWithClient(<BookingScreen />);
+    await fireEvent.press(await screen.findByText("Take $47.50 by card"));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/booking/pay/[id]",
+      params: { id: "B1" },
+    });
+    // The cash and EFTPOS route stays available.
+    expect(screen.getByText("Mark $47.50 as paid")).toBeTruthy();
+  });
+
+  test("without Tap to Pay there is no card button, and marking paid is the main action", async () => {
+    mocked.booking.mockResolvedValue(booking());
+    await renderWithClient(<BookingScreen />);
+    await screen.findByText("Mark $47.50 as paid");
+    expect(screen.queryByText(/by card/)).toBeNull();
+  });
+
+  test("no card button when nothing is owing, even with Tap to Pay set up", async () => {
+    mocked.booking.mockResolvedValue(booking({ balanceDueCents: 0 }));
+    mocked.terminalConfig.mockResolvedValue({
+      configured: true,
+      locationId: "tml_1",
+    });
+    await renderWithClient(<BookingScreen />);
+    await screen.findByText("Sam Client");
+    expect(screen.queryByText(/by card/)).toBeNull();
   });
 });

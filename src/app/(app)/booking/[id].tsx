@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Alert, Linking, View } from "react-native";
 import { Badge } from "@/components/ui/Badge";
@@ -7,6 +8,7 @@ import { Screen } from "@/components/ui/Screen";
 import { ErrorState, Loading } from "@/components/ui/States";
 import { Text } from "@/components/ui/Text";
 import { useBooking } from "@/hooks/queries";
+import { api } from "@/lib/api";
 import { useBookingActions } from "@/hooks/use-booking-actions";
 import { useMe } from "@/lib/auth/session";
 import {
@@ -49,6 +51,11 @@ export default function BookingScreen() {
   const zone = useMe().business.timezone;
   const query = useBooking(id);
   const { cancel, noShow, paid } = useBookingActions(id, () => router.back());
+  const terminal = useQuery({
+    queryKey: ["terminal"],
+    queryFn: api.terminalConfig,
+    staleTime: 5 * 60_000,
+  });
 
   if (query.isPending) return <Loading />;
   if (query.isError) {
@@ -184,9 +191,21 @@ export default function BookingScreen() {
       ) : null}
 
       <View style={{ gap: space.sm }}>
+        {b.allowed.checkout &&
+        b.balanceDueCents > 0 &&
+        terminal.data?.configured ? (
+          <Button
+            title={`Take ${money(b.balanceDueCents)} by card`}
+            disabled={busy}
+            onPress={() =>
+              router.push({ pathname: "/booking/pay/[id]", params: { id } })
+            }
+          />
+        ) : null}
         {b.allowed.checkout && b.balanceDueCents > 0 ? (
           <Button
             title={`Mark ${money(b.balanceDueCents)} as paid`}
+            variant={terminal.data?.configured ? "secondary" : "primary"}
             loading={paid.isPending}
             disabled={busy}
             onPress={askPaid}

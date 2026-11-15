@@ -1,4 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  notifyManager,
+} from "@tanstack/react-query";
 import { render } from "@testing-library/react-native";
 import type { ReactElement } from "react";
 import type { BookingDetail, Me, Resources } from "@/lib/api/schemas";
@@ -89,9 +93,21 @@ export function booking(overrides: Partial<BookingDetail> = {}): BookingDetail {
   };
 }
 
+// Deliver query updates synchronously, inside the test's own act scope, instead of on a later timer.
+notifyManager.setScheduler((callback) => callback());
+
+const clients: QueryClient[] = [];
+/** Tear every client down after each test so no timer or cache entry outlives it. */
+afterEach(() => {
+  for (const client of clients.splice(0)) client.clear();
+});
+
 export async function renderWithClient(ui: ReactElement) {
   const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+      mutations: { gcTime: Infinity },
+    },
   });
   return render(
     <QueryClientProvider client={client}>{ui}</QueryClientProvider>,

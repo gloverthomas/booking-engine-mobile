@@ -16,7 +16,7 @@ cancellation policy all live on the server, so the app and the web admin can nev
 | Appointment: details, money, call or text the client, cancel (with the deposit decision), no-show, mark paid (cash, EFTPOS, other) | Built |
 | New appointment: find or add a client, services, stylist, day, live availability, tell the client or not | Built |
 | Clients: search and profile with history | Built |
-| Tap to Pay on iPhone | Not yet (needs the Apple entitlement and Stripe Terminal location) |
+| Tap to Pay on iPhone: take the balance by card, server-recorded, appointment closes itself | Built; **untested on a device** (needs Apple's entitlement and a Stripe Terminal location, see below) |
 | Push notifications | Not yet |
 | Reschedule, roster, clock in and out | Not yet |
 
@@ -61,6 +61,20 @@ __tests__/          unit and component tests
 
 Responses are validated at runtime (`src/lib/api/schemas.ts`). If the server and app drift apart you get a
 clear "update the app" message, never a crash three screens deep.
+
+## Tap to Pay
+
+The flow is `src/lib/payments/tap-to-pay.ts` (tested with a fake reader) behind a thin adapter over the
+Stripe Terminal SDK (`use-terminal.ts`). The server decides the amount, creates the payment record, and
+its Stripe webhook records the money and completes the appointment, so a dropped connection after the tap
+cannot leave it open. If the server is slow to record it the app says "Payment taken, still being
+recorded" and never invites a second charge.
+
+- **Without Apple's entitlement** a real tap cannot work. Set `EXPO_PUBLIC_SIMULATED_READER=1` in a
+  development build to use Stripe's simulated reader (iOS Simulator, Stripe test keys).
+- **Once Apple grants the entitlement**, build with `TAP_TO_PAY_ENTITLED=1`. It is off by default because
+  declaring an entitlement the provisioning profile lacks makes the build fail to sign.
+- The server needs `STRIPE_TERMINAL_LOCATION_ID` and in-person payments enabled on the Stripe account.
 
 ## What it needs before a real build
 

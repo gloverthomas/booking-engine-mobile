@@ -10,6 +10,13 @@ const iosUrlScheme = iosClientId
   ? `com.googleusercontent.apps.${iosClientId.replace(".apps.googleusercontent.com", "")}`
   : "com.googleusercontent.apps.not-configured";
 
+/**
+ * Apple's Tap to Pay on iPhone entitlement. Only add it once Apple has granted it for this app: a build
+ * that declares an entitlement the provisioning profile lacks fails to sign. Until then the simulated
+ * reader still works for development (EXPO_PUBLIC_SIMULATED_READER=1).
+ */
+const tapToPayEntitled = process.env.TAP_TO_PAY_ENTITLED === "1";
+
 const config: ExpoConfig = {
   name: "HairMate",
   slug: "hairmate",
@@ -24,6 +31,13 @@ const config: ExpoConfig = {
     bundleIdentifier: "world.hairmate.app",
     supportsTablet: false,
     icon: "./assets/expo.icon",
+    ...(tapToPayEntitled
+      ? {
+          entitlements: {
+            "com.apple.developer.proximity-reader.payment.acceptance": true,
+          },
+        }
+      : {}),
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSFaceIDUsageDescription: "Unlock HairMate with Face ID.",
@@ -33,11 +47,23 @@ const config: ExpoConfig = {
     "expo-router",
     [
       "expo-splash-screen",
-      { backgroundColor: "#fff8f1", image: "./assets/images/splash-icon.png", imageWidth: 76 },
+      {
+        backgroundColor: "#fff8f1",
+        image: "./assets/images/splash-icon.png",
+        imageWidth: 76,
+      },
     ],
     "expo-secure-store",
     "expo-notifications",
     "expo-local-authentication",
+    [
+      // The plugin throws if it is given no options object at all.
+      "@stripe/stripe-terminal-react-native",
+      {
+        locationWhenInUsePermission:
+          "HairMate uses your location to take card payments.",
+      },
+    ],
     ["@react-native-google-signin/google-signin", { iosUrlScheme }],
   ],
   experiments: { typedRoutes: true, reactCompiler: true },
