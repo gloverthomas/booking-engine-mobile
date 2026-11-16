@@ -67,6 +67,8 @@ const config: ExpoConfig = {
     ["@react-native-google-signin/google-signin", { iosUrlScheme }],
   ],
   experiments: { typedRoutes: true, reactCompiler: true },
+  // The Expo (EAS) project: builds and push notifications. Not a secret.
+  extra: { eas: { projectId: "b08838cd-eaae-416a-b2a7-7a42d3a3a571" } },
 };
 
 export default config;
