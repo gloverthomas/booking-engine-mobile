@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Card } from "@/components/ui/Card";
@@ -11,6 +12,7 @@ import { dayName, describeDay, shiftWeek, weekLabel } from "@/lib/roster";
 import { space } from "@/theme";
 
 export default function RosterScreen() {
+  const router = useRouter();
   const [week, setWeek] = useState<string | undefined>(undefined);
   const query = useQuery({
     queryKey: keys.roster(week),
@@ -109,10 +111,27 @@ export default function RosterScreen() {
           {row.days.map((day) => {
             const line = describeDay(day, showPlace);
             const today = day.date === r.today;
+            // Only people who may edit can change a day, and only today or later: the past is history.
+            const editable = r.canEdit && day.date >= r.today;
             return (
-              <View
+              <Pressable
                 key={day.date}
                 accessible
+                accessibilityRole={editable ? "button" : undefined}
+                accessibilityHint={
+                  editable ? "Mark a day off or change hours" : undefined
+                }
+                disabled={!editable}
+                onPress={() =>
+                  router.push({
+                    pathname: "/roster/edit",
+                    params: {
+                      staffId: row.staffId,
+                      staffName: row.name,
+                      date: day.date,
+                    },
+                  })
+                }
                 accessibilityLabel={`${dayName(day.date)}, ${line.text}${line.detail ? `, ${line.detail}` : ""}${today ? ", today" : ""}`}
                 style={{
                   flexDirection: "row",
@@ -135,14 +154,16 @@ export default function RosterScreen() {
                     </Text>
                   ) : null}
                 </View>
-              </View>
+                {editable ? <Text tone="subtle">›</Text> : null}
+              </Pressable>
             );
           })}
         </Card>
       ))}
       {r.canEdit ? (
         <Text variant="caption" tone="subtle" style={{ textAlign: "center" }}>
-          Change hours and days off on the web.
+          Tap a day to mark a day off or change hours. Weekly hours are set on
+          the web.
         </Text>
       ) : null}
     </Screen>

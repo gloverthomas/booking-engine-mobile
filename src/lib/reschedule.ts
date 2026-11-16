@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import { dayHeading, shortDate, time } from "./format";
 
 /** Two ISO timestamps for the same instant, whatever their spelling (Z, +00:00, milliseconds). */
@@ -30,4 +31,35 @@ export function initialDay(
   return days.some((d) => d.date === appointmentDate)
     ? appointmentDate
     : (days[0]?.date ?? appointmentDate);
+}
+
+export interface ManualTime {
+  /** UTC instant, ready to send. */
+  start: string;
+  /** "6:15 am" in the business's time zone. */
+  label: string;
+}
+
+/**
+ * Every `stepMin` minutes of a local day between two clock times, for choosing a time that is not on the
+ * roster. Built from wall-clock times, so a daylight saving change neither repeats nor invents a time.
+ */
+export function manualTimes(
+  date: string,
+  zone: string,
+  options: { fromMinute?: number; toMinute?: number; stepMin?: number } = {},
+): ManualTime[] {
+  const { fromMinute = 6 * 60, toMinute = 22 * 60, stepMin = 15 } = options;
+  const day = DateTime.fromISO(date, { zone }).startOf("day");
+  const out: ManualTime[] = [];
+  for (let minute = fromMinute; minute < toMinute; minute += stepMin) {
+    const hour = Math.floor(minute / 60);
+    const min = minute % 60;
+    const at = day.set({ hour, minute: min });
+    // A time skipped by the clocks going forward is moved to the next valid one: drop it.
+    if (at.hour !== hour || at.minute !== min) continue;
+    const iso = at.toUTC().toISO();
+    if (iso) out.push({ start: iso, label: time(iso, zone) });
+  }
+  return out;
 }

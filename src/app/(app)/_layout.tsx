@@ -28,6 +28,13 @@ export default function AppLayout() {
           name="booking/reschedule/[id]"
           options={{ title: "Move appointment", presentation: "modal" }}
         />
+        <Stack.Screen name="waitlist/index" options={{ title: "Waitlist" }} />
+        <Stack.Screen name="waitlist/[id]" options={{ title: "Waitlist" }} />
+        <Stack.Screen
+          name="roster/edit"
+          options={{ title: "Change a day", presentation: "modal" }}
+        />
+        <Stack.Screen name="hours" options={{ title: "My hours" }} />
         <Stack.Screen name="client/[id]" options={{ title: "Client" }} />
         <Stack.Screen
           name="booking/pay/[id]"

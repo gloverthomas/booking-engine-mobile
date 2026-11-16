@@ -361,3 +361,122 @@ export const rescheduleSlotsSchema = z.object({
   reason: z.enum(["services_not_in_catalogue"]).nullable(),
 });
 export type RescheduleSlots = z.infer<typeof rescheduleSlotsSchema>;
+
+export const removedSchema = z.object({ removed: z.boolean() });
+
+/* Waitlist */
+const waitlistOfferSchema = z.object({
+  id: z.string(),
+  status: z.enum(["sent", "claimed", "expired", "slot_taken", "cancelled"]),
+  start: z.string(),
+  end: z.string(),
+  staffName: z.string(),
+  offeredBy: z.string(),
+  expiresAt: z.string(),
+});
+export const waitlistEntrySchema = z.object({
+  id: z.string(),
+  status: z.enum(["waiting", "offered", "booked", "expired", "cancelled"]),
+  clientId: z.string(),
+  clientName: z.string(),
+  clientPhone: z.string().nullable(),
+  clientEmail: z.string().nullable(),
+  locationName: z.string(),
+  staffName: z.string().nullable(),
+  serviceNames: z.array(z.string()),
+  earliestDate: z.string(),
+  latestDate: z.string(),
+  weekdays: z.array(z.number()).nullable(),
+  fromMinute: z.number().nullable(),
+  toMinute: z.number().nullable(),
+  notes: z.string().nullable(),
+  createdAt: z.string(),
+  offers: z.array(waitlistOfferSchema),
+});
+export type WaitlistEntry = z.infer<typeof waitlistEntrySchema>;
+export const waitlistListSchema = z.object({
+  entries: z.array(waitlistEntrySchema),
+});
+export const offerableSlotsSchema = z.object({
+  entry: waitlistEntrySchema,
+  timezone: z.string(),
+  slots: z.array(
+    z.object({
+      staffId: z.string(),
+      staffName: z.string(),
+      start: z.string(),
+      end: z.string(),
+    }),
+  ),
+});
+export type OfferableSlot = z.infer<
+  typeof offerableSlotsSchema
+>["slots"][number];
+export const offerCreatedSchema = z.object({ offerId: z.string() });
+
+/* Roster exceptions */
+export const rosterExceptionSchema = z.object({
+  id: z.string(),
+  staffId: z.string(),
+  staffName: z.string(),
+  date: z.string(),
+  kind: z.enum(["off", "custom"]),
+  locationId: z.string().nullable(),
+  locationName: z.string().nullable(),
+  startMinute: z.number().nullable(),
+  endMinute: z.number().nullable(),
+  note: z.string().nullable(),
+});
+export type RosterException = z.infer<typeof rosterExceptionSchema>;
+export const rosterExceptionsSchema = z.object({
+  exceptions: z.array(rosterExceptionSchema),
+});
+export const exceptionResultSchema = z.object({
+  ids: z.array(z.string()),
+  conflictingBookings: z.number(),
+});
+
+/* My hours */
+const timesheetEntrySchema = z.object({
+  id: z.string(),
+  date: z.string(),
+  locationName: z.string().nullable(),
+  clockIn: z.string(),
+  clockOut: z.string().nullable(),
+  breakMinutes: z.number(),
+  netMinutes: z.number(),
+  source: z.enum(["clock", "manual"]),
+  note: z.string().nullable(),
+  status: z.enum(["open", "pending", "approved"]),
+});
+export type TimesheetEntry = z.infer<typeof timesheetEntrySchema>;
+export const myWeekSchema = z.discriminatedUnion("available", [
+  z.object({ available: z.literal(false) }),
+  z.object({
+    available: z.literal(true),
+    sheet: z.object({
+      weekStart: z.string(),
+      days: z.array(
+        z.object({
+          date: z.string(),
+          complete: z.boolean(),
+          workedMinutes: z.number(),
+          rosteredMinutes: z.number(),
+          differenceMinutes: z.number().nullable(),
+          entries: z.array(timesheetEntrySchema),
+        }),
+      ),
+      workedMinutes: z.number(),
+      breakMinutes: z.number(),
+      rosteredMinutes: z.number(),
+      differenceMinutes: z.number(),
+      hasOpenEntry: z.boolean(),
+      pendingCount: z.number(),
+      approvedCount: z.number(),
+    }),
+  }),
+]);
+export type MyWeek = Extract<
+  z.infer<typeof myWeekSchema>,
+  { available: true }
+>["sheet"];

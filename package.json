@@ -52,7 +52,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "check": "npm run typecheck && npm run lint && npm test"
+    "check": "npm run typecheck && npm run lint && npm test",
+    "contract:sync": "cp ../booking-engine/docs/openapi.json contract/openapi.json"
   },
   "private": true
 }

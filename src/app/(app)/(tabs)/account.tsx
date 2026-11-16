@@ -1,4 +1,5 @@
 import Constants from "expo-constants";
+import { useRouter } from "expo-router";
 import { Alert } from "react-native";
 import { NotificationStatus } from "@/components/NotificationStatus";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +18,8 @@ const ROLE_LABEL = {
 export default function Account() {
   const me = useMe();
   const { signOut } = useSession();
+  const router = useRouter();
+  const canWaitlist = me.permissions.includes("waitlist.manage");
 
   function confirmSignOut() {
     Alert.alert("Sign out?", "You will need to sign in with Google again.", [
@@ -38,6 +41,18 @@ export default function Account() {
           Times shown in {me.business.timezone.replace("_", " ")}
         </Text>
       </Card>
+      <Button
+        title="My hours"
+        variant="secondary"
+        onPress={() => router.push("/hours")}
+      />
+      {canWaitlist ? (
+        <Button
+          title="Waitlist"
+          variant="secondary"
+          onPress={() => router.push("/waitlist")}
+        />
+      ) : null}
       <NotificationStatus />
       <Button title="Sign out" variant="secondary" onPress={confirmSignOut} />
       <Text variant="caption" tone="subtle" style={{ textAlign: "center" }}>

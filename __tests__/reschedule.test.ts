@@ -1,4 +1,10 @@
-import { initialDay, isMove, isSameInstant, moveLabel } from "@/lib/reschedule";
+import {
+  initialDay,
+  isMove,
+  isSameInstant,
+  manualTimes,
+  moveLabel,
+} from "@/lib/reschedule";
 
 const ZONE = "Australia/Melbourne";
 
@@ -51,5 +57,62 @@ describe("initialDay", () => {
   test("otherwise on the first day shown", () => {
     expect(initialDay("2027-01-01", days)).toBe("2026-11-24");
     expect(initialDay("2027-01-01", [])).toBe("2027-01-01");
+  });
+});
+
+describe("manualTimes", () => {
+  test("every 15 minutes from 6am to 9:45pm by default, in order", () => {
+    const times = manualTimes("2026-11-25", ZONE);
+    expect(times).toHaveLength(64);
+    expect(times[0].label).toBe("6:00 am");
+    expect(times[1].label).toBe("6:15 am");
+    expect(times.at(-1)?.label).toBe("9:45 pm");
+    // 6:00 am AEDT (UTC+11) is 19:00Z the day before.
+    expect(times[0].start).toBe("2026-11-24T19:00:00.000Z");
+  });
+
+  test("respects the range and step", () => {
+    const times = manualTimes("2026-11-25", ZONE, {
+      fromMinute: 540,
+      toMinute: 600,
+      stepMin: 30,
+    });
+    expect(times.map((t) => t.label)).toEqual(["9:00 am", "9:30 am"]);
+  });
+
+  test("a day the clocks go forward has no invented or repeated times", () => {
+    // 4 Oct 2026: 2:00 am becomes 3:00 am in Melbourne, so 2:00 to 2:45 do not exist.
+    const labels = manualTimes("2026-10-04", ZONE, {
+      fromMinute: 60,
+      toMinute: 240,
+    }).map((t) => t.label);
+    expect(labels).toEqual([
+      "1:00 am",
+      "1:15 am",
+      "1:30 am",
+      "1:45 am",
+      "3:00 am",
+      "3:15 am",
+      "3:30 am",
+      "3:45 am",
+    ]);
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+
+  test("a day the clocks go back keeps each wall-clock time once", () => {
+    // 4 Apr 2027: 3:00 am becomes 2:00 am, so 2:00 to 2:45 happen twice; we offer them once.
+    const labels = manualTimes("2027-04-04", ZONE, {
+      fromMinute: 60,
+      toMinute: 240,
+    }).map((t) => t.label);
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+
+  test("the times are valid, increasing instants", () => {
+    const starts = manualTimes("2026-11-25", ZONE).map((t) =>
+      Date.parse(t.start),
+    );
+    expect(starts.every((n) => Number.isFinite(n))).toBe(true);
+    expect([...starts].sort((a, b) => a - b)).toEqual(starts);
   });
 });

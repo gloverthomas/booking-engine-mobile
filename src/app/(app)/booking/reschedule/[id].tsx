@@ -14,7 +14,13 @@ import { messageFor } from "@/lib/api/client";
 import { useMe } from "@/lib/auth/session";
 import { upcomingDays } from "@/lib/days";
 import { dayHeading, localDate, shortDate, time } from "@/lib/format";
-import { initialDay, isMove, isSameInstant, moveLabel } from "@/lib/reschedule";
+import {
+  initialDay,
+  isMove,
+  isSameInstant,
+  manualTimes,
+  moveLabel,
+} from "@/lib/reschedule";
 import { space, useTheme } from "@/theme";
 
 export default function RescheduleScreen() {
@@ -29,6 +35,7 @@ export default function RescheduleScreen() {
   const [date, setDate] = useState<string | null>(null);
   const [chosen, setChosen] = useState<string | null>(null);
   const [notifyClient, setNotifyClient] = useState(true);
+  const [anyTime, setAnyTime] = useState(false);
 
   const day =
     date ??
@@ -89,6 +96,9 @@ export default function RescheduleScreen() {
     );
   }
 
+  const uncatalogued = slots.data?.reason === "services_not_in_catalogue";
+  const showAnyTime = anyTime || uncatalogued;
+  const anyTimes = showAnyTime && day ? manualTimes(day, zone) : [];
   const ready = isMove(b.start, chosen);
   return (
     <Screen>
@@ -133,13 +143,13 @@ export default function RescheduleScreen() {
           />
         ) : null}
 
-        {slots.data?.reason === "services_not_in_catalogue" ? (
+        {uncatalogued ? (
           <Card>
             <Text variant="heading">Times can&rsquo;t be suggested</Text>
             <Text tone="muted">
               This appointment has a service that isn&rsquo;t in your catalogue
-              (it may have come from an import). Move it from the calendar on
-              the web.
+              (it may have come from an import), so there is nothing to time it
+              against. Choose any time below; it is only checked for clashes.
             </Text>
           </Card>
         ) : null}
@@ -147,26 +157,68 @@ export default function RescheduleScreen() {
         {slots.isSuccess &&
         !slots.data.reason &&
         slots.data.slots.length === 0 ? (
-          <EmptyState title="Nothing free that day" hint="Try another day." />
+          <EmptyState
+            title="Nothing free that day"
+            hint="Try another day, or choose any other time."
+          />
         ) : null}
 
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
-          {slots.data?.slots.map((s) => {
-            const isCurrent = isSameInstant(s.start, b.start);
-            return (
-              <Chip
-                key={s.start}
-                label={
-                  isCurrent
-                    ? `${time(s.start, zone)} (now)`
-                    : time(s.start, zone)
-                }
-                selected={chosen !== null && isSameInstant(chosen, s.start)}
-                onPress={() => setChosen(s.start)}
-              />
-            );
-          })}
-        </View>
+        {!showAnyTime ? (
+          <View
+            style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}
+          >
+            {slots.data?.slots.map((s) => {
+              const isCurrent = isSameInstant(s.start, b.start);
+              return (
+                <Chip
+                  key={s.start}
+                  label={
+                    isCurrent
+                      ? `${time(s.start, zone)} (now)`
+                      : time(s.start, zone)
+                  }
+                  selected={chosen !== null && isSameInstant(chosen, s.start)}
+                  onPress={() => setChosen(s.start)}
+                />
+              );
+            })}
+          </View>
+        ) : (
+          <>
+            <Text variant="caption" tone="muted">
+              Any time from 6 am to 10 pm, including outside normal hours. We
+              only check that it doesn&rsquo;t clash with another appointment or
+              a block; you will be told if it does.
+            </Text>
+            <View
+              style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}
+            >
+              {anyTimes.map((m) => (
+                <Chip
+                  key={m.start}
+                  label={
+                    isSameInstant(m.start, b.start)
+                      ? `${m.label} (now)`
+                      : m.label
+                  }
+                  selected={chosen !== null && isSameInstant(chosen, m.start)}
+                  onPress={() => setChosen(m.start)}
+                />
+              ))}
+            </View>
+          </>
+        )}
+
+        {uncatalogued ? null : (
+          <Button
+            title={anyTime ? "Show suggested times" : "Choose any other time"}
+            variant="ghost"
+            onPress={() => {
+              setAnyTime((v) => !v);
+              setChosen(null);
+            }}
+          />
+        )}
       </View>
 
       <Card>

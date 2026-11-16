@@ -4,6 +4,13 @@ import {
   bookingDetailSchema,
   bookingListSchema,
   clockEntrySchema,
+  exceptionResultSchema,
+  myWeekSchema,
+  offerableSlotsSchema,
+  offerCreatedSchema,
+  removedSchema,
+  rosterExceptionsSchema,
+  waitlistListSchema,
   clockSchema,
   rescheduleSlotsSchema,
   rosterSchema,
@@ -128,6 +135,45 @@ export function createEndpoints(api: ApiClient) {
       api.post("/timesheets/clock/in", clockEntrySchema, { locationId }),
     clockOut: (breakMinutes: number) =>
       api.post("/timesheets/clock/out", clockEntrySchema, { breakMinutes }),
+
+    rosterExceptions: (from?: string) =>
+      api.get("/roster/exceptions", rosterExceptionsSchema, { from }),
+    setDayOff: (input: {
+      staffId: string;
+      date: string;
+      locationId: string | null;
+      note?: string;
+    }) =>
+      api.post("/roster/exceptions", exceptionResultSchema, {
+        kind: "off",
+        ...input,
+      }),
+    setCustomHours: (input: {
+      staffId: string;
+      date: string;
+      locationId: string;
+      ranges: { startMinute: number; endMinute: number }[];
+      note?: string;
+    }) =>
+      api.post("/roster/exceptions", exceptionResultSchema, {
+        kind: "custom",
+        ...input,
+      }),
+    removeRosterException: (id: string) =>
+      api.delete(`/roster/exceptions/${enc(id)}`, removedSchema),
+    myWeek: (week?: string) =>
+      api.get("/timesheets/week", myWeekSchema, { week }),
+
+    waitlist: (view: "active" | "history" = "active") =>
+      api.get("/waitlist", waitlistListSchema, { view }),
+    waitlistSlots: (id: string) =>
+      api.get(`/waitlist/${enc(id)}/slots`, offerableSlotsSchema),
+    offerWaitlistSlot: (
+      id: string,
+      slot: { staffId: string; start: string; end: string },
+    ) => api.post(`/waitlist/${enc(id)}/offer`, offerCreatedSchema, slot),
+    removeFromWaitlist: (id: string) =>
+      api.delete(`/waitlist/${enc(id)}`, removedSchema),
 
     searchClients: (q: string) => api.get("/clients", clientListSchema, { q }),
     client: (id: string) => api.get(`/clients/${enc(id)}`, clientProfileSchema),

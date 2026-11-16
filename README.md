@@ -20,8 +20,10 @@ cancellation policy all live on the server, so the app and the web admin can nev
 | Push notifications: new client booking and client cancellation to the stylist and owners; tap opens the appointment; sign-out stops them; Account shows the state | Built; **untested on a device** (needs an EAS project id, see below) |
 | Roster: who is working when, week by week (a stylist sees their own) | Built |
 | Clock in and out, with the location and an unpaid break; elapsed time from the server's clock | Built |
-| Reschedule: pick a day and a free time for the same stylist, tell the client or not; times are the server's | Built (imported services without a catalogue match get a message, not suggestions) |
-| Waitlist | Not yet |
+| Reschedule: pick a day and a free time for the same stylist, or any other time (outside hours, or for an imported service); tell the client or not | Built |
+| Waitlist (owner, manager, reception): who is waiting, the open times that suit them, offer one, remove | Built |
+| Roster editing: mark a day off or set different hours for a day, or put it back to the weekly hours; warns how many appointments end up outside | Built (weekly patterns stay on the web) |
+| My hours: the week's shifts, worked against rostered | Built (approving or fixing shifts stays on the web) |
 
 ## Run it
 
@@ -41,6 +43,11 @@ npx eas-cli@latest build --profile development --platform ios             # a re
 
 Until the Google iOS client exists, set `EXPO_PUBLIC_DEV_SIGN_IN=1` in a development build to get a
 "paste a session token" box on the sign-in screen (never shown in release builds).
+
+## The API contract
+
+`contract/openapi.json` is a copy of the server's generated OpenAPI document. `npm test` fails if the app calls an
+endpoint or query parameter the server does not document. Refresh the copy with `npm run contract:sync`.
 
 ## How sign-in works
 

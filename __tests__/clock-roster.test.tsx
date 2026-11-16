@@ -200,7 +200,9 @@ describe("Roster", () => {
     expect(screen.getByText("Holiday")).toBeTruthy();
     expect(screen.getByText("This week")).toBeTruthy();
     expect(
-      screen.getByText("Change hours and days off on the web."),
+      screen.getByText(
+        "Tap a day to mark a day off or change hours. Weekly hours are set on the web.",
+      ),
     ).toBeTruthy();
   });
 

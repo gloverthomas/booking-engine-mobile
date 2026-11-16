@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import { api } from "@/lib/api";
@@ -126,16 +127,57 @@ describe("Reschedule", () => {
     );
   });
 
-  test("a service outside the catalogue gets an honest message and no time buttons", async () => {
+  test("a service outside the catalogue says so and lets you pick any time", async () => {
     mocked.rescheduleSlots.mockResolvedValue(
       slots({ slots: [], reason: "services_not_in_catalogue" }),
     );
     await renderWithClient(<RescheduleScreen />);
     expect(await screen.findByText("Times can’t be suggested")).toBeTruthy();
-    expect(
-      screen.getByText(/Move it from the calendar on the web/),
-    ).toBeTruthy();
+    expect(screen.getByText(/Choose any time below/)).toBeTruthy();
+    expect(screen.getByText("6:00 am")).toBeTruthy();
+    expect(screen.getByText("9:45 pm")).toBeTruthy();
+    // There is nothing to switch back to when there are no suggestions.
+    expect(screen.queryByText("Show suggested times")).toBeNull();
     expect(screen.queryByText("Nothing free that day")).toBeNull();
+  });
+
+  test("any time can be chosen and is sent as that local time", async () => {
+    mocked.rescheduleSlots.mockResolvedValue(
+      slots({ slots: [], reason: "services_not_in_catalogue" }),
+    );
+    await renderWithClient(<RescheduleScreen />);
+    await fireEvent.press(await screen.findByText("7:00 am"));
+    await fireEvent.press(await screen.findByText(/^Move to .* at 7:00 am$/));
+    await waitFor(() => expect(mocked.reschedule).toHaveBeenCalled());
+    const [id, start, notify] = mocked.reschedule.mock.calls[0];
+    expect(id).toBe("B1");
+    expect(notify).toBe(true);
+    expect(
+      DateTime.fromISO(start, { zone: "Australia/Melbourne" }).toFormat(
+        "h:mm a",
+      ),
+    ).toBe("7:00 AM");
+  });
+
+  test("with suggestions available you can still switch to any time, and back", async () => {
+    await renderWithClient(<RescheduleScreen />);
+    await screen.findByText("10:15 am");
+    expect(screen.queryByText("6:00 am")).toBeNull();
+    await fireEvent.press(screen.getByText("Choose any other time"));
+    expect(await screen.findByText("6:00 am")).toBeTruthy();
+    expect(screen.getByText(/including outside normal hours/)).toBeTruthy();
+    expect(screen.queryByText("12:00 pm (now)")).toBeNull();
+    await fireEvent.press(screen.getByText("Show suggested times"));
+    expect(await screen.findByText("10:15 am")).toBeTruthy();
+    expect(screen.queryByText("6:00 am")).toBeNull();
+  });
+
+  test("switching modes clears a half-made choice", async () => {
+    await renderWithClient(<RescheduleScreen />);
+    await fireEvent.press(await screen.findByText("10:15 am"));
+    expect(screen.getByText(/^Move to .* at 10:15 am$/)).toBeTruthy();
+    await fireEvent.press(screen.getByText("Choose any other time"));
+    expect(screen.getByText("Choose a different time")).toBeTruthy();
   });
 
   test("a day with nothing free says so", async () => {
